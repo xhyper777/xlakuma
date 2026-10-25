@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Saki Naka 3D Map | Mumbai</title>
+
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .card {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      max-width: 280px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .card h2 {
+      margin: 0 0 4px 0;
+      color: #111;
+      font-size: 16px;
+    }
+
+    .card p {
+      margin: 4px 0;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #007aff;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    /* Custom Popup */
+    .maplibregl-popup-content {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Info Overlay -->
+  <div class="card">
+    <h2>📍 Saki Naka, Mumbai</h2>
+    <span class="badge">3D View</span>
+    <p>• <b>Rotate &amp; Tilt:</b> Right-click + drag (or 2 fingers on mobile)</p>
+    <p>• <b>Zoom:</b> Mouse scroll / pinch</p>
+  </div>
+
+  <div id="map" role="application" aria-label="Interactive 3D map of Saki Naka"></div>
+
+  <script>
+    const sakiNaka = [72.8878, 19.1026];
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: sakiNaka,
+      zoom: 16.5,
+      pitch: 62,
+      bearing: -25,
+      antialias: true
+    });
+
+    map.addControl(
+      new maplibregl.NavigationControl({ visualizePitch: true }),
+      'top-right'
+    );
+    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+
+    const marker = new maplibregl.Marker({ color: '#ff3b30' })
+      .setLngLat(sakiNaka)
+      .setPopup(
+        new maplibregl.Popup({ offset: 25 }).setHTML(
+          '<strong>Saki Naka Junction</strong><br>Metro Line 1 (Blue Line)<br>Andheri East, Mumbai'
+        )
+      )
+      .addTo(map);
+
+    marker.togglePopup();
+
+    map.on('load', () => {
+      const labelLayerId = map
+        .getStyle()
+        .layers.find((layer) =>
+          layer.type === 'symbol' &&
+          layer.layout &&
+          layer.layout['text-field']
+        )?.id;
+
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'openmaptiles',
+          'source-layer': 'building',
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#d1d5db',
+            'fill-extrusion-height': [
+              'interpolate', ['linear'], ['zoom'],
+              14, 0,
+              15.05, ['coalesce', ['get', 'render_height'], 18]
+            ],
+            'fill-extrusion-base': [
+              'interpolate', ['linear'], ['zoom'],
+              14, 0,
+              15.05, ['coalesce', ['get', 'render_min_height'], 0]
+            ],
+            'fill-extrusion-opacity': 0.8
+          }
+        },
+        labelLayerId
+      );
+    });
+  </script>
+</body>
+</html>
